@@ -1,0 +1,4 @@
+version 4.7.0
+
+#include "GzdoomGui_Zscript/GzdoomGui Event Handler.txt"
+#include "GzdoomGui_Zscript/player.txt"
