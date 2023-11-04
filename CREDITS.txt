@@ -1,0 +1,5 @@
+Graphics
+
+Cursor taken from Chicago 95                    (https://github.com/grassmunk/Chicago95)
+invsel taken from Gzdoom mod mrfrendly          (https://jp.itch.io/mr-friendly)
+ibag tasken from Ultima VI the Nuvie project    (http://nuvie.sourceforge.net)
