@@ -1,0 +1,72 @@
+class GUIplayer : DoomPlayer
+{
+bool ToggleUI;
+bool updateUI;
+bool mouseHold;
+int lastInvKeyTick;
+int lastMouseKeyTick;
+bool wait;
+
+override void Tick()
+{
+	
+	if ( level.maptime == 0 )
+	{
+		ToggleUI = FALSE;
+		lastInvKeyTick = level.maptime;			
+		mouseHold = level.maptime;		
+		wait = true;
+	}
+	
+	//software debouncing for toggling GUI
+	if(player.cmd.buttons & BT_USER1 && level.maptime > lastInvKeyTick + 7)
+	{
+		if(ToggleUI == true)
+		{
+			ToggleUI = false;
+			lastInvKeyTick = level.maptime;
+		}
+		else if(ToggleUI == false)
+		{
+			ToggleUI = true;
+			lastInvKeyTick = level.maptime;
+		} 
+	}
+	
+		//hold click
+	if(player.cmd.buttons & m_use_mouse && level.maptime > lastMouseKeyTick + 7 && level.maptime != lastMouseKeyTick)
+	{
+	
+	}
+	//double click
+	if(player.cmd.buttons & m_use_mouse && level.maptime > lastMouseKeyTick + 7 && level.maptime != lastMouseKeyTick)
+	{
+		//console.printf("click Function");
+		if(player.cmd.buttons & m_use_mouse && (level.maptime <= lastMouseKeyTick + 9) && (level.maptime != lastMouseKeyTick))
+		{
+			console.printf("double click");
+			lastMouseKeyTick = level.maptime;
+		}
+		
+		else if(player.cmd.buttons & m_use_mouse)
+		{
+			console.printf("single click");
+			lastMouseKeyTick = level.maptime;
+		}	
+	}
+	
+
+	
+	Super.Tick();
+}
+	default
+	{
+
+	}
+	
+	states
+	{
+	
+	}
+}
+

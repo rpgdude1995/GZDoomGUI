@@ -1,0 +1,1543 @@
+#include "GzdoomGui_Zscript/player.txt"
+
+class GuiHandler : EventHandler
+{
+
+const INIT_TICK = 1;
+
+	//Textures
+	ui TextureID ibag;
+	ui TextureID mag;
+	ui TextureID batt;
+	ui TextureID invitem;
+	ui TextureID cursor;
+	ui TextureID HoverCursor;
+	ui TextureID HoldCursor;
+	ui TextureID invicon;
+	ui TextureID invleft;
+	ui TextureID invright;
+	ui TextureID inactive;
+	ui TextureID toggled;
+	ui TextureID active;
+	ui TextureID Background;
+	//Engien nececitys
+	ui GUIplayer p;
+	ui playerinfo pi;
+	ui bool initialized;
+	//Coordinates
+	ui double x;
+	ui double y;	
+	ui double xHold;
+	ui double yHold;
+	//resolution
+	ui double Hres;
+	ui double Vres;
+	//dropdown menu 
+	ui bool contextToggle;
+	ui bool hover;
+	ui bool WeapHover;
+	ui bool SlotHover;
+	ui bool CacheWeapon;
+	ui bool CacheSlot;
+	ui bool Dragging;
+	ui bool hold;
+	ui bool use;
+	ui bool drop;
+	ui bool equip;
+	ui bool weapdrop;
+	ui int hoverAreaX;
+	ui int hoverAreaY;
+	//Inventory Cacheing
+	ui inventory invCache[99];
+	ui TextureID iconCache[99];
+	ui Weapon WeapCache[99];
+	ui TextureID IconWeapCache[99];
+	ui Weapon SlotCache[99];
+	ui int slots[99];
+	//Inventory Management 
+	ui int sel;
+	ui int Dropsel;
+	ui int WeapSel;
+	ui int SlotSel;
+	ui int holdSel;
+	ui int DragSel;
+	ui int invcount;
+	ui int location;			
+
+	ui void Init()
+	{
+			//needed for ui to read form player context
+			//without results in vm exicution error
+			pi = players[consoleplayer];
+			p = GUIplayer(pi.mo);
+			hover = false;
+			hold = false;
+			Dragging = False;
+			contextToggle = False;
+			x = 0;
+			y = 0;
+			Vres = Screen.GetWidth();
+			Hres = Screen.GetHeight();
+			initialized = TRUE;
+			inactive = texman.checkfortexture("inactive",0);
+			toggled = texman.checkfortexture("toggled",0);
+			active = texman.checkfortexture("invsel",0);
+			Background = texman.checkfortexture("Bag",0);
+			Cursor = texman.checkfortexture("Arrow",0);
+			HoverCursor = texman.checkfortexture("Finger",0);
+			HoldCursor = texman.checkfortexture("Hand",0);		
+			FillSlotCache();
+		/*	
+			//this replicates default bindings for doom
+			slots[0] = 0; //fists
+			slots[1] = 1; //chainsaw
+			slots[2] = 2; //pistol
+			slots[3] = 17; //no default
+			slots[4] = 3; //shotgun
+			slots[5] = 4; //super shotgun
+			slots[6] = 5; //chaingun
+			slots[7] = 17; //no default
+			slots[8] = 6; //rocket launcher
+			slots[9] = 17; //no default
+			slots[10] = 7; //plasma gun
+			slots[11] = 17; //no default 
+			slots[12] = 8;	//BFG9000
+			slots[13] = 17;	//no default 
+			slots[14] = 17; //no default 
+			slots[15] = 17; //no default 
+			slots[16] = 17; //no default 
+			slots[17] = 17; //no default 
+		*/	
+				//this replicates default bindings for doom
+			slots[0] = 0; //no default 
+			slots[1] = 0; //no default 
+			slots[2] = 0; //no default 
+			slots[3] = 0; //no default
+			slots[4] = 0; //no default 
+			slots[5] = 0; //no default 
+			slots[6] = 0; //no default 
+			slots[7] = 0; //no default
+			slots[8] = 0; //no default 
+			slots[9] = 0; //no default
+			slots[10] = 0; //no default 
+			slots[11] = 0; //no default 
+			slots[12] = 0; //no default 
+			slots[13] = 0;	//no default 
+			slots[14] = 0; //no default 
+			slots[15] = 0; //no default 
+			slots[16] = 0; //no default 
+			slots[17] = 0; //no default 
+			
+	}
+	
+	ui int getItemsNumber()
+	{
+		let item   = players[consolePlayer].mo.inv;
+		int result = 0;
+		while (item != NULL)
+		{
+			result += item.bInvBar;
+			item = item.inv;
+		}
+		return result;
+	}	
+			
+	ui int getItemsIndex()
+	{
+		let item   = p.invsel;
+		int result = getItemsNumber() + 1;
+		while (item != NULL)
+		{
+			result -= item.bInvBar;
+			item = item.inv;
+		}
+		return result;
+	}
+	
+	ui int InvSize()
+	{
+		let item   = p.invFirst; 
+		int result = getItemsNumber() + 1;
+		
+		if(item != NULL) 
+		{
+			while (item == pi.mo.invFirst)
+			{
+				result -= item.bInvBar;
+				item = item.inv;
+			}
+			return result;
+		}
+		else
+		{
+			return 0;
+		}
+			
+	}
+	
+	ui void inventorycache()//puts item in array for easy manipulation
+	{
+		bool type;
+		int index;
+		//StatusBar.ValidateInvFirst(InvSize()) =
+		let rover = players[consolePlayer].mo.inv;//pi.mo.invFirst;
+		int i = 0;
+		int j = 0;
+		int x = 0;
+		
+		if(rover!=NULL)
+		{				
+			for(i = 0; i < invSize() && rover; rover = rover.NextInv())
+			{	
+				if((rover.amount > 0) && (rover.binvbar == True))
+				{
+					//iconCache[i] = rover.icon;
+					iconCache[i] = (BaseStatusBar.getInventoryIcon(rover, BaseStatusBar.DI_ALTICONFIRST));
+					invCache[i] = rover;
+					i++;		
+				}			
+				if(invCache[i] == invCache[i + 1])
+				{	
+					invCache[i + 1] = Null;
+				}		
+				if(invCache[0] == invCache[1])
+				{
+					invCache[1] = Null;
+				}								
+			}					
+		}	
+	}
+	
+	ui void Weaponcache()//puts Weapons in array for easy manipulation
+	{
+		int tw;
+		int tq;
+		int index = 1;
+		
+		//IconWeapCache[i] = StatusBar.GetInventoryIcon(pi.ReadyWeapon, StatusBar.DI_ALTICONFIRST);
+		
+		for(int tw = 1; Tw <= 9; tw++)
+		{
+			for(int tq = 0; tq <= 9; tq++)
+			{	
+				if(pi.mo.FindInventory(pi.weapons.GetWeapon(tw, tq)) != Null)
+				{
+					WeapCache[index] = Weapon(pi.mo.FindInventory(pi.weapons.GetWeapon(tw, tq)));
+					IconWeapCache[index] = StatusBar.GetInventoryIcon(WeapCache[index], StatusBar.DI_ALTICONFIRST);
+					index++;				
+				}
+			}
+		}	
+	}		
+	
+	ui void FillSlotcache()//puts Weapons in array for easy manipulation
+	{
+		int tw;
+		int tq;
+		int index = 1;
+		for(int tw = 1; Tw <= 9; tw++)
+		{
+			for(int tq = 0; tq <= 9; tq++)
+			{	
+				if(pi.mo.FindInventory(pi.weapons.GetWeapon(tw, tq)) != Null )
+				{
+					SlotCache[index] = Weapon(pi.mo.FindInventory(pi.weapons.GetWeapon(tw, tq)));
+					index++;				
+				}
+						
+			}
+		}	
+	}	
+	
+		ui void drawCell(int posX, int posY, int type, int columnsX, int rowsY)
+		{
+			int view = columnsX * rowsY;
+			//console.printf("%.2f", view);
+			int i = 0;
+			int j = 0;
+			int index;
+			
+			ibag = texman.checkfortexture("ibag",0);
+			active = texman.checkfortexture("invsel",0);
+			toggled = texman.checkfortexture("toggled",0);
+			Inactive = texman.checkfortexture("inactive",0);
+			Background = texman.checkfortexture("bag",0);
+			
+			//let weap  = Weapon(pi.mo.FindInventory(pi.weapons.GetWeapon(3, 3)));
+			//TextureID picnum = StatusBar.GetInventoryIcon(pi.ReadyWeapon, StatusBar.DI_ALTICONFIRST);
+			//TextureID picnum = StatusBar.GetInventoryIcon(Weap, StatusBar.DI_ALTICONFIRST);
+			//Screen.DrawTexture(picnum, false, 10, 10, DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 320, DTA_DestHeight, 200,DTA_LeftOffset, -60, DTA_TopOffset, 0);
+			
+			switch(type)
+			{
+				case 1:
+					Screen.DrawTexture(background, false, posx-50, posy-37, DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, columnsX*100, DTA_DestHeight, RowsY*75);
+					screen.DrawText(BIGFONT, Font.CR_ORANGE, posx-25, posy-45, "INVENTORY ITEMS", DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+					Hover = False;
+					
+					for(i = 0; (i <= columnsX) && (invCache[i] != Null); i++)
+					{		
+						if(columnsX != i && RowsY != j)
+						{
+							if(invcache[index] != Null)
+							{
+								screen.DrawText(BIGFONT, Font.CR_YELLOW, posx+(i*100)+25, posy+(j*75)+15, string.format("%g",invcache[index].amount), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+							}
+						
+							if(invCache[index] != NULL)
+							{
+								Screen.DrawTexture(Toggled, false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48, DTA_Alpha, 0.2, DTA_CenterOffset, DTA_CenterBottomOffset);
+								screen.DrawText(BIGFONT, Font.CR_YELLOW, posx+(i*100)+25, posy+(j*75)+15, string.format("%g",invcache[index].amount), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+								Screen.DrawTexture(iconCache[index], false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48, DTA_Alpha, .3, DTA_CenterOffset, DTA_CenterBottomOffset);
+								//TexMan.checkForTexture(invCache[index].getclassname(),  TexMan.Type_Any);
+							}
+							
+							if(invCache[0] != Null)
+							{
+								//hover = True;
+							}
+							else if(invCache[0] == Null)
+							{
+								//hover = False;
+							}
+							
+							if(invCache[index] == p.invsel)
+							{
+								Screen.DrawTexture(active, false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 100, DTA_DestHeight, 75,DTA_CenterOffset, DTA_CenterBottomOffset, DTA_FillColor, 0xffffff);
+								//Screen.DrawTexture(active, false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 100, DTA_DestHeight, 75,DTA_CenterOffset, DTA_CenterBottomOffset);
+								Screen.DrawTexture(iconCache[index], false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);	
+								screen.DrawText(BIGFONT, Font.CR_YELLOW, posx+(i*100)+25, posy+(j*75)+15, string.format("%g",invcache[index].amount), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+							}
+						}
+						if((posx + (i * 100)- 55) <= x && x <= (posx + (i * 100) + 45) && (posy + (j * 75)) - 37 <= y && y <= (posy + (j * 75) + 37) && invCache[index] != Null && columnsX != i && RowsY != j)
+						{	
+							
+							hover = true;	
+							if(contextToggle == True)
+							{
+								DropSel = sel;
+								if(invCache[index] == invCache[dropsel])
+								{
+									Screen.DrawTexture(baseStatusBar.getInventoryIcon(invCache[dropsel] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);
+								}
+							}	
+							
+							if(contexttoggle == false)
+							{
+								
+								Screen.DrawTexture(baseStatusBar.getInventoryIcon(invCache[index] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);
+								screen.DrawText(BIGFONT, Font.CR_YELLOW, posx+(i*100)+25, posy+(j*75)+15, string.format("%g",invcache[index].amount), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+								sel = index;
+							}
+						}
+						if(i >= columnsX -1  && rowsY >= 1 && rowsY != j && i != columnsX)
+						{
+							if(j <= RowsY && j != RowsY)
+							{
+								j++;
+								i = -1;
+							}	
+						}
+						if(contextToggle == True && (invCache[index] == invCache[dropsel]))
+						{
+							//Screen.DrawTexture(baseStatusBar.getInventoryIcon(invCache[dropsel] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);
+						}
+						
+						
+						index++;		
+					}
+					
+					
+				break;
+				
+				case 2:
+					
+					int Size = pi.weapons.SlotSize(i);
+					Inventory weapon = pi.ReadyWeapon;
+					bool checkSlot = pi.HasWeaponsInSlot(i);
+					Screen.DrawTexture(background, false, posx-50, posy-37, DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, columnsX*100, DTA_DestHeight, RowsY*75);
+					screen.DrawText(BIGFONT, Font.CR_ORANGE, posx-25, posy-45, "WEAPONS", DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+					index = 1;
+					//int nClasses = AllActorClasses.Size();
+				//	let type = (class<Weapon>)(AllActorClasses[index]);
+					int tw = 1;
+					int tq = 0;
+			
+					weapHover = false;
+					for(i = 0; (i <= columnsX); i++)
+					{		
+						if(columnsX != i && RowsY != j)
+						{
+							Screen.DrawTexture(Toggled, false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48, DTA_Alpha, 0.2, DTA_CenterOffset, DTA_CenterBottomOffset);																				
+							Screen.DrawTexture(StatusBar.getInventoryIcon(WeapCache[index] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset, DTA_Alpha, .3);		
+						}
+						
+						if(weapCache[index] == pi.ReadyWeapon)
+						{
+							Screen.DrawTexture(active, false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 100, DTA_DestHeight, 75,DTA_CenterOffset, DTA_CenterBottomOffset, DTA_FillColor, 0xffffff);
+							Screen.DrawTexture(StatusBar.getInventoryIcon(WeapCache[index] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset);
+						}
+						
+						if((posx + (i * 100)- 55) <= x && x <= (posx + (i * 100) + 45) && (posy + (j * 75)) - 37 <= y && y <= (posy + (j * 75) + 37) && WeapCache[index] != Null && columnsX != i && RowsY != j)
+						{				
+							Screen.DrawTexture(baseStatusBar.getInventoryIcon(WeapCache[index] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset);
+							WeapHover = true;
+							WeapSel = index;
+							//DragSel = index;
+							
+							if(contextToggle == True)
+							{
+								WeapSel = Hold;
+
+							}
+							
+							if(contexttoggle == false)
+							{
+								//Screen.DrawTexture(baseStatusBar.getInventoryIcon(weapCache[index] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);
+								
+								WeapSel = index;
+							}
+							
+							
+						}
+						if(i >= columnsX -1  && rowsY >= 1 && rowsY != j && i != columnsX)
+						{
+							if(j <= RowsY && j != RowsY)
+							{
+								j++;
+								i = -1;
+							}	
+
+						}
+						if(hold == true && CacheWeapon == True && WeapHover == True)
+						{
+							if(CacheWeapon == True)
+							{
+								DragSel = weapSel;
+							}
+							CacheWeapon = False;
+							//Screen.DrawTexture(baseStatusBar.getInventoryIcon(WeapCache[dragSel] ,BaseStatusBar.DI_ALTICONFIRST), false, x, y, DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset);
+						}
+						
+						index++;		
+					}
+					//bool checkSlot = p.HasWeaponsInSlot(1);
+					
+					//pi.mo.FindInventory();
+					
+					//console.printf("%.2f",size);
+				
+				
+				
+				break;
+				
+				case 3:
+				//fillSlotCache();
+				Screen.DrawTexture(background, false, posx-50, posy-37, DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, columnsX*100, DTA_DestHeight, RowsY*75);
+				screen.DrawText(BIGFONT, Font.CR_ORANGE, posx-25, posy-45, "WEAPON SLOTS", DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+
+					//int Size = pi.weapons.SlotSize(i);
+					//Inventory weapon = pi.ReadyWeapon;
+					//bool checkSlot = pi.HasWeaponsInSlot(i);
+				
+				slothover = false;
+
+				//FillSlotCache();
+				
+				
+				//	int tw = 1;
+					//int tq = 0;
+					int iq=0;
+					int jq=0;
+					
+					for(j = 0; (j <= Rowsy); j++)
+					{		
+						if(columnsX != i && RowsY != j)
+						{
+							Screen.DrawTexture(Toggled, false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48, DTA_Alpha, 0.2, DTA_CenterOffset, DTA_CenterBottomOffset);																				
+							Screen.DrawTexture(StatusBar.getInventoryIcon(Weapon(weapCache[slots[index]]) ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset, DTA_Alpha, .3);
+								
+						}
+						
+						if(weapCache[slots[index]] == pi.ReadyWeapon)
+						{
+							Screen.DrawTexture(active, false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 100, DTA_DestHeight, 75,DTA_CenterOffset, DTA_CenterBottomOffset, DTA_FillColor, 0xffffff);
+							Screen.DrawTexture(StatusBar.getInventoryIcon(Weapon(Weapcache[slots[index]]) ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset);
+						}
+						
+						if((posx + (i * 100)- 55) <= x && x <= (posx + (i * 100) + 45) && (posy + (j * 75)) - 37 <= y && y <= (posy + (j * 75) + 37) && columnsX != i && RowsY != j)
+						{		
+							
+							if(Dragging == true)
+							{								
+								Screen.DrawTexture(baseStatusBar.getInventoryIcon(Weapon(SlotCache[DragSel]) ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset);
+							}
+							SlotHover = true;
+							SlotSel = index;
+							//console.printf("%.2f slot sel", slotSel);
+							//console.printf("%.2f drag sel", dragSel);
+							//console.printf("%.2f slots sel", slots[slotSel]);
+							//console.printf("%.2f slots drag", slots[dragsel]);
+							//slotsel = DragSel;
+							
+							if(contextToggle == True)
+							{
+								WeapSel = Hold;
+							}
+							
+							if(contexttoggle == false)
+							{
+								//Screen.DrawTexture(baseStatusBar.getInventoryIcon(Weapon(pi.mo.FindInventory(pi.weapons.GetWeapon(i+1, j))),BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);
+								
+								WeapSel = index;
+							}
+							
+							
+						}
+						if(j >= RowsY -1  && columnsX >= 1 && columnsX != i && j != RowsY)
+						{
+							if(j <= RowsY && j != RowsY)
+							{
+								i++;
+								j = -1;
+							}
+							
+						}
+						
+						if(hold == true && CacheSlot== True && SlotHover == True)
+						{
+							if(CacheSlot == True)
+							{
+								DragSel = SlotSel;
+								slotsel = index;
+								console.printf("%.2f dragSel From slots", dragSel);
+							}
+							CacheSlot = False;
+							//Screen.DrawTexture(baseStatusBar.getInventoryIcon(WeapCache[dragSel] ,BaseStatusBar.DI_ALTICONFIRST), false, x, y, DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset);
+						}
+
+						index++;	
+						
+					}
+				
+				break;
+			
+			}
+		
+		}
+	
+		ui void drawMouse()
+		{
+			//self.RequireMouse = true;
+		//	mouseEvent();
+			
+			if(Weaphover == false && hover == false && SlotHover == false && hold == false)
+			{
+			
+			cursor = texman.checkfortexture("arrow",0);
+			Screen.DrawTexture(cursor, false, x, y,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 64);
+			
+			}
+			if((WeapHover == True || SlotHover == True || hover == True ) && hold == false)
+			{
+				HoverCursor = texman.checkfortexture("Finger",0);
+				Screen.DrawTexture(HoverCursor, false, x, y,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 64);
+			}
+			
+			if(hold == true)
+			{
+			
+				HoldCursor = texman.checkfortexture("hand",0);
+
+				if(WeapHover == True || CacheWeapon == False  || CacheSlot == False)
+				{
+					Screen.DrawTexture(baseStatusBar.getInventoryIcon(weapCache[DragSel] ,BaseStatusBar.DI_ALTICONFIRST), false, x-10, y+30,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 100, DTA_DestHeight, 40);
+					Dragging = true;
+				}
+				if(WeapHover == True || SlotHover == True || CacheWeapon == False || CacheSlot == False)
+				{
+					Screen.DrawTexture(baseStatusBar.getInventoryIcon(weapCache[DragSel] ,BaseStatusBar.DI_ALTICONFIRST), false, x-10, y+30,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 100, DTA_DestHeight, 40);
+					Dragging = true;
+				}							
+				if(SlotHover == True || CacheWeapon == False  || CacheSlot == False)
+				{
+					Screen.DrawTexture(baseStatusBar.getInventoryIcon(SlotCache[DragSel] ,BaseStatusBar.DI_ALTICONFIRST), false, x-10, y+30,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 100, DTA_DestHeight, 40);
+					Dragging = true;
+				}
+				
+				Screen.DrawTexture(HoldCursor, false, x, y,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 64);
+				
+				
+			}
+			
+		}
+
+		ui void drawDropdown(int xloc, int yloc)
+		{
+			inactive = texman.checkfortexture("inactive",0);
+			toggled = texman.checkfortexture("toggled",0);
+			
+			use = False;
+			Drop = False;
+			
+			textureid Box1 = toggled;
+			textureid Box2 = toggled;
+			textureid Box3 = toggled;
+			
+			int Black = Font.CR_BLACK;
+			int Red = Font.CR_RED;
+			
+			int str1 = Black;
+			int str2 = Black;
+			int str3 = Black;
+			
+			xhold = xloc;
+			yhold = yloc;
+			//Screen.DrawTexture(inactive, false, xloc, yloc+52,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 164, DTA_DestHeight, 32);
+			
+			//HudFont = Font.FindFont("HUDFONT_DOOM");
+			HUDFont mHUDFont;
+			HUDFont mIndexFont;
+			HUDFont mAmountFont;
+	
+			int status;
+			//int yM[] = 0, 0, 36, 72;
+			
+			//Draw inventory dropdown
+			if(hover == true && ContextToggle == true)
+			{
+				if((xloc <= x && x <= xloc + 275) && (yloc <= y && y <= yloc + 64))
+				{	
+					status = 1;
+					use = True;
+					Drop = False;
+					hover = true;
+					weaphover = false;
+				}
+				else if((xloc <= x && x <= xloc + 275) && (yloc <= y && y <= yloc + 64 + 64))
+				{	
+					status = 2;
+					use = False;
+					Drop = True;
+					hover = true;			
+					weaphover = false;			
+				}
+				else
+				{		
+					status = 0;
+					use = False;
+					Drop = False;
+					hover = true;
+					weaphover = false;
+				}
+				
+				
+				switch(status)
+				{
+				
+					case 0:
+					Box1 = toggled;
+					Box2 = toggled;
+					str1 = Black;
+					str2 = Black;	
+					break;
+				
+					case 1:
+					Box1 = inactive;
+					Box2 = toggled;
+					str1 = Red;
+					str2 = Black;	
+					break;
+					
+					case 2: 
+					Box1 = toggled;
+					Box2 = inactive;
+					str1 = Black;
+					str2 = Red;	
+					break;
+				
+				
+				}
+				Screen.DrawTexture(Box1, false, xloc, yloc,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 275, DTA_DestHeight, 64);
+				screen.DrawText(smallfont, str1, xloc+10, yloc+10, "Use", DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+				
+				Screen.DrawTexture(Box2, false, xloc, yloc+64,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 275, DTA_DestHeight, 64);
+				screen.DrawText(smallfont, str2, xloc+10, yloc+64+10, "Drop", DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+						
+			}
+			// Draws weapon dropdown
+			if(WeapHover == true && ContextToggle == true)
+			{
+				if((xloc <= x && x <= xloc + 275) && (yloc <= y && y <= yloc + 64))
+				{	
+					status = 1;
+					Equip = True;
+					weapDrop = False;
+					weaphover = true;
+					hover = false;
+				}
+				else if((xloc <= x && x <= xloc + 275) && (yloc <= y && y <= yloc + 64 + 64))
+				{	
+					status = 2;
+					Equip = False;
+					weapDrop = True;
+					weapHover = true;			
+					weapHover = false;			
+				}
+				else
+				{		
+					status = 0;
+					Equip = False;
+					weapDrop = False;
+					weaphover = true;
+					hover = false;
+				}
+				
+				
+				switch(status)
+				{
+				
+					case 0:
+					Box1 = toggled;
+					Box2 = toggled;
+					str1 = Black;
+					str2 = Black;
+					break;
+				
+					case 1:
+					Box1 = inactive;
+					Box2 = toggled;
+					str1 = Red;
+					str2 = Black;
+					break;
+					
+					case 2: 
+					Box1 = toggled;
+					Box2 = inactive;
+					str1 = Black;
+					str2 = Red;
+					break;
+				
+				
+				}
+				Screen.DrawTexture(Box1, false, xloc, yloc,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 275, DTA_DestHeight, 64);
+				screen.DrawText(smallfont, str1, xloc+10, yloc+10, "Equip", DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+				
+				Screen.DrawTexture(Box2, false, xloc, yloc+64,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 275, DTA_DestHeight, 64);
+				screen.DrawText(smallfont, str2, xloc+10, yloc+64+10, "Drop", DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+				
+				
+				
+				
+				
+				
+					for(int j = 0; j<= 7; j++)
+					{
+						if((xloc <= x && x <= xloc + 275) && (yloc <= y && y <= yloc + 64) && equip == true)
+						{	
+							status = j+1;
+							Equip = True;
+							weapDrop = False;
+							weaphover = true;
+							hover = false;
+						}
+					}		
+					
+					 textureid Box[] = {toggled,toggled,toggled,toggled,toggled,toggled,toggled};	
+					 int str[] = {Black,Black,Black,Black,Black,Black,Black};
+
+						switch(status)
+						{
+						
+							case 0:
+							Box1 = toggled;
+							Box2 = toggled;
+							str1 = Black;
+							str2 = Black;
+							break;
+						
+							case 1:
+							Box1 = inactive;
+							Box2 = toggled;
+							str1 = Red;
+							str2 = Black;
+							break;
+							
+							case 2: 
+							Box1 = toggled;
+							Box2 = inactive;
+							str1 = Black;
+							str2 = Red;
+							break;
+						
+						
+						}
+						for(int i=0; i<=7; i++)
+						{
+							Screen.DrawTexture(Box1, false, xloc+230, yloc+(i*64),DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 275, DTA_DestHeight, 64);
+							screen.DrawText(smallfont, str1, xloc+280, yloc+(i*74), "Slot", DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);	
+							//int val = i+1;
+							//int number = console.prinf("%s", val);
+							//screen.DrawText(smallfont, str1, xloc+350, yloc+(i*74), number, DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);						
+						}
+						{
+						
+			}
+				
+			}
+		
+		}
+		
+		ui void drawdebug(int xloc, int yloc)
+		{
+			int list = 0;
+			screen.DrawText(smallfont, 4, xloc+10, yloc+10, "items", DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+			
+			for(int index = 0; index < 99; index++)
+			{
+				
+				screen.DrawText(smallfont, 4, xloc+10, yloc+(25*index), string.format("%g",index), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+				//screen.DrawText(smallfont, 4, xloc+100, yloc+(25*index), string.format("%g",slots[index]), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+				
+				if(WeapCache[index] != Null )
+				{
+					//screen.DrawText(smallfont, 4, xloc+230, yloc+(25*index), WeapCache[index].getclassname(), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+					//screen.DrawText(smallfont, 4, xloc+230, yloc+(25*index), WeapCache[index].getclassname(), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+					list++; 
+				}
+			}
+			
+			bool type;
+			int index;
+			let rover = players[consolePlayer].mo.inv;//pi.mo.invFirst;
+			int i = 0;
+			int j = 0;
+			int x = 0;
+			
+			if(rover!=NULL)
+			{				
+				for(index = 0; index < invSize() && rover; rover = rover.NextInv())
+				{	
+					if(rover != NULL)
+					{
+						//iconCache[i] = rover.icon;
+						//iconCache[i] = (BaseStatusBar.getInventoryIcon(rover, BaseStatusBar.DI_ALTICONFIRST));
+						screen.DrawText(smallfont, 4, xloc+230, yloc+(25*index), invcache[index].getclassname(), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+						//invCache[i] = rover;
+						index++;		
+					}										
+				}					
+			}
+			
+			
+			
+			
+			
+		}
+
+		override void Renderoverlay(RenderEvent e)
+		{
+			if(initialized == false)
+			init();
+			if(initialized == true)
+			{
+			inventorycache();
+			WeaponCache();
+			fillSlotCache();
+			//drawdebug(30, 60);
+				if(p.ToggleUI == true)
+				{
+					if(contextToggle == true)
+					{
+						drawdropdown(xhold, yhold);
+					}
+					
+					DrawMouse();
+					
+				}
+			}
+		}
+		
+		override void RenderUnderlay(RenderEvent e)
+		{
+			if(initialized == false)
+			init();
+			if(initialized == true)
+			{
+				if(p.ToggleUI == true)
+				{
+					drawCell(700,400,1,4,3);
+					drawCell(200,400,2,4,3);
+					drawCell(300,200,3,7,2);
+					//drawdebug(30, 60);
+				}
+			
+			}
+
+		}
+		
+		override bool UiProcess(UiEvent e)
+		{
+			return true;
+		}
+		
+		override bool InputProcess(InputEvent e)
+		{
+		
+		if(initialized == false)
+		return false;
+		//Console.Printf("%.2f",hover);
+			//Console.Printf("%.2f, %.2f",e.MouseX ,e.MouseY);
+			//Console.Printf("%.2f, %.2f",X ,Y);
+			
+			int left;
+			int right;
+			int back;
+			int forward;
+			int click;
+			int altclick;
+			int i;
+			int up;
+			int down;
+			int Shift;
+			int Slot1;
+			int Slot2;
+			int Slot3;
+			int Slot4;
+			int Slot5;
+			int Slot6;
+			int Slot7;
+			int Slot8;
+			int Slot9;
+			
+			[left, i] = Bindings.GetKeysForCommand("+moveleft");
+			[right, i] = Bindings.GetKeysForCommand("+moveright");
+			[forward, i] = Bindings.GetKeysForCommand("+forward");
+			[back, i] = Bindings.GetKeysForCommand("+back");
+			[click, i] = Bindings.GetKeysForCommand("+attack");
+			[altclick, i] = Bindings.GetKeysForCommand("+altattack");
+			x += e.MouseX;
+			y -= e.MouseY;
+			[up, i] = Bindings.GetKeysForCommand("weapprev");
+			[down, i] = Bindings.GetKeysForCommand("weapnext");
+			[shift, i] = Bindings.GetKeysForCommand("+speed");
+			
+			[Slot1, i] = Bindings.GetKeysForCommand("slot 1");
+			[Slot2, i] = Bindings.GetKeysForCommand("slot 2");
+			[Slot3, i] = Bindings.GetKeysForCommand("slot 3");
+			[Slot4, i] = Bindings.GetKeysForCommand("slot 4");
+			[Slot5, i] = Bindings.GetKeysForCommand("slot 5");
+			[Slot6, i] = Bindings.GetKeysForCommand("slot 6");
+			[Slot7, i] = Bindings.GetKeysForCommand("slot 7");
+			[Slot8, i] = Bindings.GetKeysForCommand("slot 8");
+			[Slot9, i] = Bindings.GetKeysForCommand("slot 9");
+			
+
+				if ( e.Type == InputEvent.Type_Mouse && p.toggleui)
+				{
+					x = max(-215, min(1495, x));
+					y = max(0, min(720, y));
+					return true;
+				}	
+				
+				
+			if(e.Type == InputEvent.Type_KeyDown && p.toggleui)
+			{
+				
+				if(e.KeyScan == click && p.toggleui == true)
+				{	
+
+					if(contextToggle == true && Use == True)
+					{
+						
+						EventHandler.SendNetworkEvent("UseInv", dropsel);
+						console.Printf("%.2f",dropsel);
+						contextToggle = false;
+						
+		
+					}
+					
+					if(contextToggle == true && drop == True)
+					{
+						
+						EventHandler.SendNetworkEvent("DropInv", dropsel);
+						Console.Printf("%.2f",dropsel);
+						contextToggle = false;
+						
+		
+					}
+
+					if(contextToggle == false && hover == true)
+					{	
+						
+						while(invCache[sel] != p.invsel)
+						{
+							Console.Printf("click");
+							p.invNext();
+						
+						}
+					
+					}
+					
+					if(contextToggle == false && weaphover == true)
+					{	
+						
+						//while(invCache[sel] != p.invsel)
+						//{
+						//	Console.Printf("click");
+						//	p.invNext();
+						
+						//}
+					
+					}
+					
+					if(hover == true)
+					{
+						hold == False;
+					}
+					if(weaphover == true  && hold == False)
+					{
+						CacheWeapon = True;
+						Hold = !hold;	
+					}
+					if(Slothover == true && hold == False)
+					{
+						CacheSlot = True;
+						Hold = !hold;	
+					}
+					if(slotHover == true && hold == True)
+					{	
+						Hold = !hold;	
+					}
+					if(dragging == True && SlotHover == True)
+					{
+						slots[slotSel] = dragSel;
+						dragging = false;		
+					}
+					hold == False;
+					
+					
+				return true;			
+						
+				}
+				
+				if(e.KeyScan == Shift && p.toggleui == true)
+				{
+					if(hover == true)
+					{
+						hold == False;
+					}
+					if(weaphover == true  && hold == False)
+					{
+						CacheWeapon = True;
+						Hold = !hold;	
+					}
+					if(Slothover == true && hold == False)
+					{
+						CacheSlot = True;
+						Hold = !hold;	
+					}
+					if(slotHover == true && hold == True)
+					{	
+						Hold = !hold;	
+					}
+					if(dragging == True && SlotHover == True)
+					{
+						slots[slotSel] = dragSel;
+						dragging = false;		
+					}
+					hold == False;
+					
+					return true;	
+				}
+				
+				if(
+				e.KeyScan == click && p.toggleui == true && level.maptime > 0)
+				{
+				
+				}
+				
+				
+				if(e.KeyScan == altclick && p.toggleui == true)
+				{			
+				
+					if(e.KeyScan == altclick && slotHover == true)
+					{
+				
+						console.printf("empty slot");
+						console.printf("%.2f", slotsel);
+						slots[slotSel] = 0;
+				
+					}
+				
+					if(e.Type == InputEvent.Type_KeyDown && use == true && e.KeyScan == click)
+					{
+						EventHandler.SendNetworkEvent("UseInv", sel);
+					}
+					if(e.Type == InputEvent.Type_KeyDown && drop == true && e.KeyScan == click)
+					{
+						EventHandler.SendNetworkEvent("DropInv", sel);
+					}
+				
+					contextToggle = !contextToggle;
+					xHold = x;
+					yHold = y;
+
+					//EventHandler.SendNetworkEvent("UseInv", invCache[sel].getclassname());
+					
+					
+					//Console.Printf("%.2f,%.2f,%.2f",q,x,y);
+					//Console.Printf("%.2f",q);
+					
+				return true;			
+						
+				}
+				
+				
+				
+				
+				//////////////////////////////////////////////////////////////////////
+				// captures the rest of the inputs so the player cant move around etc
+				/////////////////////////////////////////////////////////////////////
+				else if(e.KeyScan == left && p.toggleui)
+				{
+					if (p.toggleui)
+					{
+						//EventHandler.SendNetworkEvent("");
+						return true;
+					}
+				}
+				else if(e.KeyScan == right && p.toggleui)
+				{
+					if (p.toggleui)
+					{
+						//EventHandler.SendNetworkEvent("");
+						return true;
+					}p.invnext();
+				}
+				else if(e.KeyScan == back && p.toggleui)
+				{
+					if (p.toggleui)
+					{
+						//EventHandler.SendNetworkEvent("");
+						return true;
+					}
+				}
+				else if(e.KeyScan == forward && p.toggleui)
+				{
+					if (p.toggleui)
+					{
+						//EventHandler.SendNetworkEvent("");
+						return true;
+					}
+				}
+				
+				
+				//////////////////////////////////////////////////////////////////////
+				// allows player to mousewheele through inventory items
+				/////////////////////////////////////////////////////////////////////
+				else if(e.KeyScan == up && p.toggleui)
+				{
+					
+					if (p.toggleui)
+					{
+						p.invprev();
+						invcount++;
+						//Console.Printf("%.2f",invcount);
+						return true;
+					}
+					
+				}
+				
+				else if(e.KeyScan == down && p.toggleui)
+				{
+					
+					if (p.toggleui)
+					{
+						p.invnext();
+						invcount--;
+						//Console.Printf("%.2f",invcount);
+						return true;
+					}
+					
+				}
+							
+			}
+			
+			//////////////////////////////////////////////////////////////////////
+			// Overrides the keyboard Weapon slots so they can be rearanged
+			/////////////////////////////////////////////////////////////////////
+				
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == slot1)
+				{	
+					if(WeapCache[slots[0]] != null || WeapCache[slots[1]] != null)
+					{
+						if(WeapCache[slots[0]] != null)
+						{
+							//console.printf("Slot 0");
+							EventHandler.SendNetworkEvent(weapCache[slots[0]].GetClassName());
+						}				
+						if(WeapCache[slots[1]] != null)
+						{
+							//console.printf("slot 1");
+							EventHandler.SendNetworkEvent(weapCache[slots[1]].GetClassName());
+						}
+					}	
+					return true;	
+				}
+			}
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == slot2)
+				{
+					if(WeapCache[slots[2]] != null || WeapCache[slots[3]] != null)
+					{
+						if(WeapCache[slots[2]] != null)
+						{
+							//console.printf("slot 2");
+							EventHandler.SendNetworkEvent(weapCache[slots[2]].GetClassName());
+						}
+						if(WeapCache[slots[3]] != null)
+						{
+							//console.printf("slot 3");
+							EventHandler.SendNetworkEvent(weapCache[slots[3]].GetClassName());
+						}	
+					}
+					return true;	
+				}
+			}
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == slot3)
+				{
+					if(WeapCache[slots[4]] != null || WeapCache[slots[5]] != null)
+					{
+						if(WeapCache[slots[4]] != null)
+						{
+							//console.printf("slot 4");
+							EventHandler.SendNetworkEvent(weapCache[slots[4]].GetClassName());
+						}
+						if(WeapCache[slots[5]] != null)
+						{
+							//console.printf("slot 5");
+							EventHandler.SendNetworkEvent(weapCache[slots[5]].GetClassName());
+						}	
+					}
+					return true;	
+				}
+			}
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == slot4)
+				{
+					if(WeapCache[slots[6]] != null || WeapCache[slots[7]] != null)
+					{
+						if(WeapCache[slots[6]] != null)
+						{
+							//console.printf("slot 7");
+							EventHandler.SendNetworkEvent(weapCache[slots[6]].GetClassName());
+						}
+						if(WeapCache[slots[7]] != null)
+						{
+							//console.printf("slot 6");
+							EventHandler.SendNetworkEvent(weapCache[slots[7]].GetClassName());
+						}	
+					}
+					return true;	
+				}
+			}
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == slot5)
+				{
+					if(WeapCache[slots[8]] != null || WeapCache[slots[9]] != null)
+					{
+						if(WeapCache[slots[8]] != null)
+						{
+							//console.printf("slot 9");
+							EventHandler.SendNetworkEvent(weapCache[slots[8]].GetClassName());
+						}
+						if(WeapCache[slots[9]] != null)
+						{
+							//console.printf("slot 8");
+							EventHandler.SendNetworkEvent(weapCache[slots[9]].GetClassName());
+						}	
+					}
+					return true;	
+				}
+			}
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == slot6)
+				{
+					if(WeapCache[slots[10]] != null || WeapCache[slots[11]] != null)
+					{
+						if(WeapCache[slots[10]] != null)
+						{
+							//console.printf("slot 11");
+							EventHandler.SendNetworkEvent(weapCache[slots[10]].GetClassName());
+						}
+						if(WeapCache[slots[11]] != null)
+						{
+							//console.printf("slot 10");
+							EventHandler.SendNetworkEvent(weapCache[slots[11]].GetClassName());
+						}	
+					}
+					return true;	
+				}
+			}
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == slot7)
+				{
+					if(WeapCache[slots[12]] != null || WeapCache[slots[13]] != null)
+					{
+						if(WeapCache[slots[12]] != null)
+						{
+							//console.printf("slot 13");
+							EventHandler.SendNetworkEvent(weapCache[slots[12]].GetClassName());
+						}
+						if(WeapCache[slots[13]] != null)
+						{
+							//console.printf("slot 12");
+							EventHandler.SendNetworkEvent(weapCache[slots[13]].GetClassName());
+						}	
+					}
+					return true;	
+				}
+			}
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == slot8)
+				{
+					if(WeapCache[slots[14]] != null || WeapCache[slots[15]] != null)
+					{
+						if(WeapCache[slots[14]] != null)
+						{
+							//console.printf("slot 15");
+							EventHandler.SendNetworkEvent(weapCache[slots[14]].GetClassName());
+						}
+						if(WeapCache[slots[15]] != null)
+						{
+							//console.printf("slot 14");
+							EventHandler.SendNetworkEvent(weapCache[slots[15]].GetClassName());
+						}	
+					}
+					return true;	
+				}
+			}
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == slot9)
+				{
+					if(WeapCache[slots[16]] != null || WeapCache[slots[17]] != null)
+					{
+						if(WeapCache[slots[16]] != null)
+						{
+							//console.printf("slot 17");
+							EventHandler.SendNetworkEvent(weapCache[slots[16]].GetClassName());
+						}
+						if(WeapCache[slots[17]] != null)
+						{
+							//console.printf("slot 16");
+							EventHandler.SendNetworkEvent(weapCache[slots[17]].GetClassName());
+						}	
+					}
+					return true;	
+				}
+			}
+	/*		
+			else if(e.KeyScan == up)
+				{	
+					if(weapCache[slotSel] != Null)
+					{
+						if(SlotSel = 17)
+						{
+							slotSel = 0;
+							EventHandler.SendNetworkEvent(weapCache[slotSel].GetClassName());
+						}
+						if(SlotSel != 17)
+						{
+							SlotSel++;
+							EventHandler.SendNetworkEvent(weapCache[slotSel].GetClassName());
+						}
+						
+					}
+					SlotSel++;
+					console.printf("ye");
+					return true;	
+				}
+				
+				else if(e.KeyScan == down)
+				{	
+					if(weapCache[slotSel] != Null && SlotSel != 0)
+					{
+						SlotSel--;
+						EventHandler.SendNetworkEvent(weapCache[slotSel].GetClassName());	
+					}
+					if(weapCache[slotSel] != Null)
+					{
+						if(SlotSel = 0)
+						{
+							slotSel = 16;
+							if(weapCache[16] != Null)
+							{
+								EventHandler.SendNetworkEvent(weapCache[slotSel].GetClassName());
+							}
+						}
+					}
+					console.printf("aaagh");
+					SlotSel--;
+					return true;	
+				}
+			
+			*/
+			return false;
+		}		
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Network events to communicate bettween UI and PLAY Contexts
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+override void NetworkProcess(ConsoleEvent e)
+	{
+	
+	playerpawn p = playerpawn(players[e.Player].mo);
+		
+	if ( level.maptime == 0)
+	{
+		let delay = level.maptime;
+	}
+		let item  = players[consolePlayer].mo.invsel;
+		let itemscan  = players[consolePlayer].mo.invFirst;
+		int i = 0;
+		inventory cache[100];
+	
+	
+		//////////////////////////////////////////////////////////////////////////
+		//Inventory Usage
+		/////////////////////////////////////////////////////////////////////////
+		if(e.Name == "UseInv" && e.Args[0] >= 0 && itemscan != NULL)
+		{
+			int delay;
+			if( level.maptime > delay + 10)
+			{
+				for(i = 0;itemscan != Null; i++)
+				{
+					cache[i] = itemscan;
+					itemscan = itemscan.Nextinv();
+
+					if(cache[e.Args[0]] != NULL && (i == e.Args[0]))
+					{				
+						p.useinventory(cache[e.Args[0]]);
+						Console.Printf("Use Inventory");
+						let delay = level.maptime;
+					}	
+					
+				}
+				
+			}
+		}
+		
+		if(e.Name == "SwInv" && e.Args[0] != 0 && itemscan != NULL)
+		{
+			int delay;
+			
+			Console.Printf("switch Inventory");
+			if( level.maptime > delay + 10)
+			{
+				for(i = 1;itemscan != Null; i++)
+				{
+					cache[i] = item;
+					item = item.Nextinv();
+					//p.invnext();
+					if(cache[e.Args[0]] != NULL && (i == e.Args[0]))
+					{				
+						//p.Nextinv();
+						
+						let delay = level.maptime;
+					}	
+					
+				}
+				
+			}
+		}
+		
+		if(e.Name == "DropInv" && item != NULL)
+		{
+			//p.invPrev();
+			
+			//Console.Printf("%.2f",item);
+			int delay;
+			if( level.maptime > delay + 10)
+			{
+				for(i = 0;itemscan != Null; i++)
+				{
+					cache[i] = itemscan;
+					itemscan = itemscan.Nextinv();
+					if(cache[e.Args[0]] != NULL && (i == e.Args[0]))
+					{				
+						p.removeinventory(cache[e.Args[0]]);
+						//summon(cache[e.Args[0]]);
+						Console.Printf("Drop inventory");
+						let delay = level.maptime;
+					}	
+					
+				}
+				
+			}
+			
+		}
+
+
+		///////////////////////////////////////////////////////////////////////
+		//Switching Weapon Network events (Doom)
+		///////////////////////////////////////////////////////////////////////
+		if(e.Name == "Fist")
+		{
+			p.A_SelectWeapon("Fist");
+		}
+
+		if(e.Name == "Chainsaw")
+		{
+			p.A_SelectWeapon("Chainsaw");
+		}
+		
+		if(e.Name == "Pistol")
+		{
+			p.A_SelectWeapon("Pistol");
+		}
+		
+		if(e.Name == "Shotgun")
+		{
+			p.A_SelectWeapon("Shotgun");
+		}
+		
+		if(e.Name == "SuperShotgun")
+		{
+			p.A_SelectWeapon("SuperShotgun");
+		}
+		
+		if(e.Name == "Chaingun")
+		{
+			p.A_SelectWeapon("Chaingun");
+		}
+		
+		if(e.Name == "RocketLauncher")
+		{
+			p.A_SelectWeapon("RocketLauncher");
+		}
+		
+		if(e.Name == "PlasmaRifle")
+		{
+			p.A_SelectWeapon("PlasmaRifle");
+		}
+		
+		if(e.Name == "BFG9000")
+		{
+			p.A_SelectWeapon("BFG9000");
+		}
+
+	}
+		
+}	
