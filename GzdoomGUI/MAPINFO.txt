@@ -1,6 +1,4 @@
 gameinfo
 {
-	playerclasses = "GUIplayer"
 	addeventhandlers = "GuiHandler"
-	//StatusBarClass = "FW_statusBar"
 }
