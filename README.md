@@ -23,6 +23,3 @@ Be aware that this software overrides the player class an is not compatable with
 -Currently only works with DOOM properly not heretic/hexen/strife
 
 -the screen draws items at a hardcoded virtual resolution of 1280x720 therefore does not properly support 4x3, 5x4, 16x10 etc.
-
--Mouse scrolling through weapons does not correspond to the chosen selection it just uses the defaults
-
