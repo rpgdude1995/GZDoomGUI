@@ -1,6 +1,7 @@
-addkeysection "GzdoomGui" keysection
-addmenukey "$Show Inventory" ToggleInventory //what will be executed
-alias "ToggleInventory" "+user1; wait 1; -user1"//"+MYKEYPRESS; wait 1; -MYKEYPRESS"//"puke 1000"
+Alias +ToggleInventory "event INV_Open"
+Alias -ToggleInventory ""
 
-defaultbind "tab" ToggleInventory
+//addkeysection "GzdoomGui" keysection
+//addmenukey "$Show Inventory" ToggleInventory //what will be executed
 
+//defaultbind "tab" ToggleInventory
