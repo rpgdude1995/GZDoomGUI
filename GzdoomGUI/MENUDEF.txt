@@ -1,0 +1,11 @@
+AddOptionMenu OptionsMenu       { Submenu "$GzdoomGUI Options", GZDoomGUI_Options }
+
+OptionMenu GZDoomGUI_Options
+{
+
+  Title "$GzdoomGUI Options"
+
+  StaticText "Inventory Options"
+  Control     "$Show Inventory" , "+ToggleInventory"
+
+}
