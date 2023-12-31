@@ -63,6 +63,8 @@ const INIT_TICK = 1;
 	ui int DragSel;
 	ui int invcount;
 	ui int location;			
+	ui int activeWeaponSlot;
+
 
 	ui void Init()
 	{
@@ -108,7 +110,7 @@ const INIT_TICK = 1;
 			slots[16] = 17; //no default 
 			slots[17] = 17; //no default 
 		*/	
-				//this replicates default bindings for doom
+				//Cleared Bindings
 			slots[0] = 0; //no default 
 			slots[1] = 0; //no default 
 			slots[2] = 0; //no default 
@@ -933,6 +935,16 @@ const INIT_TICK = 1;
 			[Slot9, i] = Bindings.GetKeysForCommand("slot 9");
 			
 
+			
+			
+			console.printf("%.2f", activeWeaponSlot);
+		//	int weap = 0;
+		//	while(weapCache[weap] != pi.ReadyWeapon)
+		//	{
+		//		weap++;
+		//	}
+		//	activeWeaponSlot = weap;
+
 				if ( e.Type == InputEvent.Type_Mouse && p.toggleui)
 				{
 					x = max(-215, min(1495, x));
@@ -1178,11 +1190,13 @@ const INIT_TICK = 1;
 						{
 							//console.printf("Slot 0");
 							EventHandler.SendNetworkEvent(weapCache[slots[0]].GetClassName());
+							activeWeaponSlot = 0;
 						}				
 						if(WeapCache[slots[1]] != null)
 						{
 							//console.printf("slot 1");
 							EventHandler.SendNetworkEvent(weapCache[slots[1]].GetClassName());
+							activeWeaponSlot = 1;
 						}
 					}	
 					return true;	
@@ -1198,11 +1212,13 @@ const INIT_TICK = 1;
 						{
 							//console.printf("slot 2");
 							EventHandler.SendNetworkEvent(weapCache[slots[2]].GetClassName());
+							activeWeaponSlot = 2;
 						}
 						if(WeapCache[slots[3]] != null)
 						{
 							//console.printf("slot 3");
 							EventHandler.SendNetworkEvent(weapCache[slots[3]].GetClassName());
+							activeWeaponSlot = 3;
 						}	
 					}
 					return true;	
@@ -1218,11 +1234,13 @@ const INIT_TICK = 1;
 						{
 							//console.printf("slot 4");
 							EventHandler.SendNetworkEvent(weapCache[slots[4]].GetClassName());
+							activeWeaponSlot = 4;
 						}
 						if(WeapCache[slots[5]] != null)
 						{
 							//console.printf("slot 5");
 							EventHandler.SendNetworkEvent(weapCache[slots[5]].GetClassName());
+							activeWeaponSlot = 5;
 						}	
 					}
 					return true;	
@@ -1238,11 +1256,13 @@ const INIT_TICK = 1;
 						{
 							//console.printf("slot 7");
 							EventHandler.SendNetworkEvent(weapCache[slots[6]].GetClassName());
+							activeWeaponSlot = 6;
 						}
 						if(WeapCache[slots[7]] != null)
 						{
 							//console.printf("slot 6");
 							EventHandler.SendNetworkEvent(weapCache[slots[7]].GetClassName());
+							activeWeaponSlot = 7;
 						}	
 					}
 					return true;	
@@ -1258,11 +1278,13 @@ const INIT_TICK = 1;
 						{
 							//console.printf("slot 9");
 							EventHandler.SendNetworkEvent(weapCache[slots[8]].GetClassName());
+							activeWeaponSlot = 8;
 						}
 						if(WeapCache[slots[9]] != null)
 						{
 							//console.printf("slot 8");
 							EventHandler.SendNetworkEvent(weapCache[slots[9]].GetClassName());
+							activeWeaponSlot = 9;
 						}	
 					}
 					return true;	
@@ -1278,11 +1300,13 @@ const INIT_TICK = 1;
 						{
 							//console.printf("slot 11");
 							EventHandler.SendNetworkEvent(weapCache[slots[10]].GetClassName());
+							activeWeaponSlot = 10;
 						}
 						if(WeapCache[slots[11]] != null)
 						{
 							//console.printf("slot 10");
 							EventHandler.SendNetworkEvent(weapCache[slots[11]].GetClassName());
+							activeWeaponSlot = 11;
 						}	
 					}
 					return true;	
@@ -1298,11 +1322,13 @@ const INIT_TICK = 1;
 						{
 							//console.printf("slot 13");
 							EventHandler.SendNetworkEvent(weapCache[slots[12]].GetClassName());
+							activeWeaponSlot = 12;
 						}
 						if(WeapCache[slots[13]] != null)
 						{
 							//console.printf("slot 12");
 							EventHandler.SendNetworkEvent(weapCache[slots[13]].GetClassName());
+							activeWeaponSlot = 13;
 						}	
 					}
 					return true;	
@@ -1318,11 +1344,13 @@ const INIT_TICK = 1;
 						{
 							//console.printf("slot 15");
 							EventHandler.SendNetworkEvent(weapCache[slots[14]].GetClassName());
+							activeWeaponSlot = 14;
 						}
 						if(WeapCache[slots[15]] != null)
 						{
 							//console.printf("slot 14");
 							EventHandler.SendNetworkEvent(weapCache[slots[15]].GetClassName());
+							activeWeaponSlot = 15;
 						}	
 					}
 					return true;	
@@ -1338,16 +1366,69 @@ const INIT_TICK = 1;
 						{
 							//console.printf("slot 17");
 							EventHandler.SendNetworkEvent(weapCache[slots[16]].GetClassName());
+							activeWeaponSlot = 16;
 						}
 						if(WeapCache[slots[17]] != null)
 						{
 							//console.printf("slot 16");
 							EventHandler.SendNetworkEvent(weapCache[slots[17]].GetClassName());
+							activeWeaponSlot = 17;
 						}	
 					}
 					return true;	
 				}
 			}
+			
+			
+			//////////////////////////////////////////////////////////////////////
+			// Overrides the Mouse Wheele Weapon Select
+			/////////////////////////////////////////////////////////////////////
+			
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == up)
+				{
+					if(slots[activeWeaponSlot] != 0 && activeWeaponSlot != 0)
+					{
+						activeWeaponSlot--;
+					}
+					while(slots[activeWeaponSlot] == 0 && activeWeaponSlot != 0)
+					{
+						activeWeaponSlot--;
+					}
+					if(slots[activeWeaponSlot] != 0)
+					{
+						EventHandler.SendNetworkEvent(weapCache[slots[activeWeaponSlot]].GetClassName());
+					}
+					return true;	
+				}
+			}
+			
+			if(e.Type == InputEvent.Type_KeyDown)
+			{
+				if(e.KeyScan == down)
+				{
+				
+					if(slots[activeWeaponSlot] != 0 && activeWeaponSlot != 98)
+					{
+						activeWeaponSlot++;
+					}
+					while(slots[activeWeaponSlot] == 0 && activeWeaponSlot != 98)
+					{
+						activeWeaponSlot++;
+					}
+					if(slots[activeWeaponSlot] != 0)
+					{
+						EventHandler.SendNetworkEvent(weapCache[slots[activeWeaponSlot]].GetClassName());
+					}
+					return true;
+				}
+			}
+			
+			
+			
+			
+			
 	/*		
 			else if(e.KeyScan == up)
 				{	
@@ -1493,6 +1574,13 @@ override void NetworkProcess(ConsoleEvent e)
 		///////////////////////////////////////////////////////////////////////
 		//Switching Weapon Network events (Doom)
 		///////////////////////////////////////////////////////////////////////
+		if(e.Name != "UseInv" && e.Name != "SwInv" && e.Name != "DropInv")
+		{
+			p.A_SelectWeapon(e.name);
+		}
+
+		/*
+		
 		if(e.Name == "Fist")
 		{
 			p.A_SelectWeapon("Fist");
@@ -1537,7 +1625,9 @@ override void NetworkProcess(ConsoleEvent e)
 		{
 			p.A_SelectWeapon("BFG9000");
 		}
-
+*/
 	}
+		
+}	
 		
 }	
