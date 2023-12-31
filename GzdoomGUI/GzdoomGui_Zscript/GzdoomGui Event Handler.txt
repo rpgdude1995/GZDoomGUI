@@ -937,7 +937,7 @@ const INIT_TICK = 1;
 
 			
 			
-			console.printf("%.2f", activeWeaponSlot);
+		//	console.printf("%.2f", activeWeaponSlot);
 		//	int weap = 0;
 		//	while(weapCache[weap] != pi.ReadyWeapon)
 		//	{
