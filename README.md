@@ -20,6 +20,4 @@ Be aware that this software overrides the player class an is not compatable with
 
 -sprite scaling is hardcoded and causes problems with the fist
 
--Currently only works with DOOM properly not heretic/hexen/strife
-
 -the screen draws items at a hardcoded virtual resolution of 1280x720 therefore does not properly support 4x3, 5x4, 16x10 etc.
