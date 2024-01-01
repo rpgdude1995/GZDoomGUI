@@ -1,5 +1,3 @@
-#include "GzdoomGui_Zscript/player.txt"
-
 class GuiHandler : EventHandler
 {
 
