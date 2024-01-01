@@ -21,7 +21,8 @@ const INIT_TICK = 1;
 	ui TextureID active;
 	ui TextureID Background;
 	//Engien nececitys
-	ui GUIplayer p;
+	ui bool ToggleUI;
+	ui playerpawn p;
 	ui playerinfo pi;
 	ui bool initialized;
 	//Coordinates
@@ -70,8 +71,10 @@ const INIT_TICK = 1;
 	{
 			//needed for ui to read form player context
 			//without results in vm exicution error
+			ToggleUI = False;
 			pi = players[consoleplayer];
-			p = GUIplayer(pi.mo);
+			
+			p = playerpawn(pi.mo);
 			hover = false;
 			hold = false;
 			Dragging = False;
@@ -132,6 +135,15 @@ const INIT_TICK = 1;
 			
 	}
 	
+	//Gui Toggle
+	override void consoleProcess(ConsoleEvent event)
+	{
+		if (event.name == "INV_Open")
+		{
+			ToggleUI = !ToggleUI;
+		}
+	}
+
 	ui int getItemsNumber()
 	{
 		let item   = players[consolePlayer].mo.inv;
@@ -847,7 +859,7 @@ const INIT_TICK = 1;
 			WeaponCache();
 			fillSlotCache();
 			//drawdebug(30, 60);
-				if(p.ToggleUI == true)
+				if(ToggleUI == true)
 				{
 					if(contextToggle == true)
 					{
@@ -866,7 +878,7 @@ const INIT_TICK = 1;
 			init();
 			if(initialized == true)
 			{
-				if(p.ToggleUI == true)
+				if(ToggleUI == true)
 				{
 					drawCell(700,400,1,4,3);
 					drawCell(200,400,2,4,3);
@@ -912,6 +924,8 @@ const INIT_TICK = 1;
 			int Slot8;
 			int Slot9;
 			
+			
+			//[ToggleInventory, i] = Bindings.GetKeysForCommand("+user1");
 			[left, i] = Bindings.GetKeysForCommand("+moveleft");
 			[right, i] = Bindings.GetKeysForCommand("+moveright");
 			[forward, i] = Bindings.GetKeysForCommand("+forward");
@@ -937,7 +951,7 @@ const INIT_TICK = 1;
 
 			
 			
-		//	console.printf("%.2f", activeWeaponSlot);
+			//console.printf("%.2f", activeWeaponSlot);
 		//	int weap = 0;
 		//	while(weapCache[weap] != pi.ReadyWeapon)
 		//	{
@@ -945,7 +959,7 @@ const INIT_TICK = 1;
 		//	}
 		//	activeWeaponSlot = weap;
 
-				if ( e.Type == InputEvent.Type_Mouse && p.toggleui)
+				if ( e.Type == InputEvent.Type_Mouse && ToggleUI)
 				{
 					x = max(-215, min(1495, x));
 					y = max(0, min(720, y));
@@ -953,10 +967,10 @@ const INIT_TICK = 1;
 				}	
 				
 				
-			if(e.Type == InputEvent.Type_KeyDown && p.toggleui)
+			if(e.Type == InputEvent.Type_KeyDown && ToggleUI)
 			{
 				
-				if(e.KeyScan == click && p.toggleui == true)
+				if(e.KeyScan == click && ToggleUI == true)
 				{	
 
 					if(contextToggle == true && Use == True)
@@ -1033,7 +1047,7 @@ const INIT_TICK = 1;
 						
 				}
 				
-				if(e.KeyScan == Shift && p.toggleui == true)
+				if(e.KeyScan == Shift && ToggleUI == true)
 				{
 					if(hover == true)
 					{
@@ -1064,13 +1078,13 @@ const INIT_TICK = 1;
 				}
 				
 				if(
-				e.KeyScan == click && p.toggleui == true && level.maptime > 0)
+				e.KeyScan == click && ToggleUI == true && level.maptime > 0)
 				{
 				
 				}
 				
 				
-				if(e.KeyScan == altclick && p.toggleui == true)
+				if(e.KeyScan == altclick && ToggleUI == true)
 				{			
 				
 					if(e.KeyScan == altclick && slotHover == true)
@@ -1111,33 +1125,33 @@ const INIT_TICK = 1;
 				//////////////////////////////////////////////////////////////////////
 				// captures the rest of the inputs so the player cant move around etc
 				/////////////////////////////////////////////////////////////////////
-				else if(e.KeyScan == left && p.toggleui)
+				else if(e.KeyScan == left && ToggleUI)
 				{
-					if (p.toggleui)
+					if (ToggleUI)
 					{
 						//EventHandler.SendNetworkEvent("");
 						return true;
 					}
 				}
-				else if(e.KeyScan == right && p.toggleui)
+				else if(e.KeyScan == right && ToggleUI)
 				{
-					if (p.toggleui)
+					if (ToggleUI)
 					{
 						//EventHandler.SendNetworkEvent("");
 						return true;
 					}p.invnext();
 				}
-				else if(e.KeyScan == back && p.toggleui)
+				else if(e.KeyScan == back && ToggleUI)
 				{
-					if (p.toggleui)
+					if (ToggleUI)
 					{
 						//EventHandler.SendNetworkEvent("");
 						return true;
 					}
 				}
-				else if(e.KeyScan == forward && p.toggleui)
+				else if(e.KeyScan == forward && ToggleUI)
 				{
-					if (p.toggleui)
+					if (ToggleUI)
 					{
 						//EventHandler.SendNetworkEvent("");
 						return true;
@@ -1148,10 +1162,10 @@ const INIT_TICK = 1;
 				//////////////////////////////////////////////////////////////////////
 				// allows player to mousewheele through inventory items
 				/////////////////////////////////////////////////////////////////////
-				else if(e.KeyScan == up && p.toggleui)
+				else if(e.KeyScan == up && ToggleUI)
 				{
 					
-					if (p.toggleui)
+					if (ToggleUI)
 					{
 						p.invprev();
 						invcount++;
@@ -1161,10 +1175,10 @@ const INIT_TICK = 1;
 					
 				}
 				
-				else if(e.KeyScan == down && p.toggleui)
+				else if(e.KeyScan == down && ToggleUI)
 				{
 					
-					if (p.toggleui)
+					if (ToggleUI)
 					{
 						p.invnext();
 						invcount--;
