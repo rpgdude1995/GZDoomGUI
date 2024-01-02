@@ -268,6 +268,7 @@ const INIT_TICK = 1;
 			int i = 0;
 			int j = 0;
 			int index;
+			bool DrawHold = false;
 			
 			ibag = texman.checkfortexture("ibag",0);
 			active = texman.checkfortexture("invsel",0);
@@ -296,12 +297,14 @@ const INIT_TICK = 1;
 								screen.DrawText(BIGFONT, Font.CR_YELLOW, posx+(i*100)+25, posy+(j*75)+15, string.format("%g",invcache[index].amount), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
 							}
 						
-							if(invCache[index] != NULL)
+							if(invCache[index] != NULL) // Fill unselected icons and tiles
 							{
 								Screen.DrawTexture(Toggled, false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48, DTA_Alpha, 0.2, DTA_CenterOffset, DTA_CenterBottomOffset);
 								screen.DrawText(BIGFONT, Font.CR_YELLOW, posx+(i*100)+25, posy+(j*75)+15, string.format("%g",invcache[index].amount), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
 								Screen.DrawTexture(iconCache[index], false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48, DTA_Alpha, .3, DTA_CenterOffset, DTA_CenterBottomOffset);
 								//TexMan.checkForTexture(invCache[index].getclassname(),  TexMan.Type_Any);
+								//screen.DrawText(smallfont, 4, x+30, y+25, invcache[index].getclassname(), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+								
 							}
 							
 							if(invCache[0] != Null)
@@ -319,6 +322,8 @@ const INIT_TICK = 1;
 								//Screen.DrawTexture(active, false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 100, DTA_DestHeight, 75,DTA_CenterOffset, DTA_CenterBottomOffset);
 								Screen.DrawTexture(iconCache[index], false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);	
 								screen.DrawText(BIGFONT, Font.CR_YELLOW, posx+(i*100)+25, posy+(j*75)+15, string.format("%g",invcache[index].amount), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+								
+								
 							}
 						}
 						if((posx + (i * 100)- 55) <= x && x <= (posx + (i * 100) + 45) && (posy + (j * 75)) - 37 <= y && y <= (posy + (j * 75) + 37) && invCache[index] != Null && columnsX != i && RowsY != j)
@@ -331,15 +336,19 @@ const INIT_TICK = 1;
 								if(invCache[index] == invCache[dropsel])
 								{
 									Screen.DrawTexture(baseStatusBar.getInventoryIcon(invCache[dropsel] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);
+									
 								}
 							}	
 							
-							if(contexttoggle == false)
+							if(contexttoggle == false)//Highlight on Hover
 							{
 								
 								Screen.DrawTexture(baseStatusBar.getInventoryIcon(invCache[index] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);
 								screen.DrawText(BIGFONT, Font.CR_YELLOW, posx+(i*100)+25, posy+(j*75)+15, string.format("%g",invcache[index].amount), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
 								sel = index;
+							//	screen.DrawText(BIGFONT, 4, x+40, y+35, invcache[index].getclassname(), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+								DrawHold = true;
+								
 							}
 						}
 						if(i >= columnsX -1  && rowsY >= 1 && rowsY != j && i != columnsX)
@@ -355,15 +364,21 @@ const INIT_TICK = 1;
 							//Screen.DrawTexture(baseStatusBar.getInventoryIcon(invCache[dropsel] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 48,DTA_CenterOffset, DTA_CenterBottomOffset);
 						}
 						
-						
+						if(DrawHold == TRUE && invcache[index] != NULL)
+						{
+							screen.DrawText(BIGFONT, 4, x+40, y+35, invcache[sel].getclassname(), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+							
+						}
 						index++;		
 					}
 					
+					DrawHold = false;
 					
 				break;
 				
 				case 2:
 					
+					//bool DrawHold = False;
 					int Size = pi.weapons.SlotSize(i);
 					Inventory weapon = pi.ReadyWeapon;
 					bool checkSlot = pi.HasWeaponsInSlot(i);
@@ -393,7 +408,10 @@ const INIT_TICK = 1;
 						if((posx + (i * 100)- 55) <= x && x <= (posx + (i * 100) + 45) && (posy + (j * 75)) - 37 <= y && y <= (posy + (j * 75) + 37) && WeapCache[index] != Null && columnsX != i && RowsY != j)
 						{				
 							Screen.DrawTexture(baseStatusBar.getInventoryIcon(WeapCache[index] ,BaseStatusBar.DI_ALTICONFIRST), false, posx+(i*100), posy+(j*75), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset);
+							//screen.DrawText(smallfont, 4, x-100, y+50, weapCache[index].getclassname(), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_CellX, 40, DTA_CellY, 32);
+							screen.DrawText(BIGFONT, 4, x+40, y+35, weapCache[index].getclassname(), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
 							WeapHover = true;
+							DrawHold = TRUE;
 							WeapSel = index;
 							//DragSel = index;
 							
@@ -430,6 +448,13 @@ const INIT_TICK = 1;
 							CacheWeapon = False;
 							//Screen.DrawTexture(baseStatusBar.getInventoryIcon(WeapCache[dragSel] ,BaseStatusBar.DI_ALTICONFIRST), false, x, y, DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 24,DTA_CenterOffset, DTA_CenterBottomOffset);
 						}
+						
+						if(DrawHold == TRUE && weapcache[index] != NULL)
+						{
+							screen.DrawText(BIGFONT, 4, x+40, y+35, weapcache[weapsel].getclassname(), DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720);
+							
+						}
+						
 						
 						index++;		
 					}
@@ -554,6 +579,7 @@ const INIT_TICK = 1;
 			{
 				HoverCursor = texman.checkfortexture("Finger",0);
 				Screen.DrawTexture(HoverCursor, false, x, y,DTA_VirtualWidth, 1280, DTA_VirtualHeight, 720, DTA_DestWidth, 64, DTA_DestHeight, 64);
+
 			}
 			
 			if(hold == true)
