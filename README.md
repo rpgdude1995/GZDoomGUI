@@ -12,12 +12,8 @@ Be aware that this software overrides the player class an is not compatable with
 
 /////KNOW ISSUES////////
 
--The dropdown is incredibly glitcy and essentialy nonfunctional
+-the double click is very glitchy
 
--Droping items/weapons does not spawn said item in the game world
-
--using right click on a weapon brings up a nonfunctional equip option
-
--sprite scaling is hardcoded and causes problems with the fist
+-sprite scaling is primitive and causes problems with some sprites
 
 -the screen draws items at a hardcoded virtual resolution of 1280x720 therefore does not properly support 4x3, 5x4, 16x10 etc.
