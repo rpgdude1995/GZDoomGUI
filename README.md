@@ -1,3 +1,6 @@
+# This project has moved
+Gzdoom GUI is now [Doomventory hud](https://github.com/rpgdude1995/Doomventory-HUD)
+
 # GZDoomGUI
 An GUI to Manage Weapons and Inventory in GZdoom
 
